@@ -32,21 +32,21 @@ System wspomagający użytkownika w hodowli roślin doniczkowych.
  * buzzer
 
 ## Działanie
-Wykorzystaliśmy system FreeRTOS i stworzyliśmy szereg zadań które operują poszczególnymi elementami systemu.
+Wykorzystaliśmy system FreeRTOS i stworzyliśmy szereg zadań, które operują poszczególnymi elementami systemu.
 
 ### Zadania
 
 ### `checkIfPlantNeedsWater`
-Zadanie ma na celu regularne sprawdzanie czy poziom wilgotności gleby nie spadł poniżej progu.
-W przypadku przekrocznnia minimalnej dozwolonej wildgotności uruchamiany jest task `pumpingTask` a  task `checkIfPlantNeedsWater` jest zawieszany do czasu zakończenia pompowania.
+Zadanie ma na celu regularne sprawdzanie, czy poziom wilgotności gleby nie spadł poniżej progu.
+W przypadku przekroczenia minimalnej dozwolonej wilgotności uruchamiany jest task `pumpingTask` a  task `checkIfPlantNeedsWater` jest zawieszany do czasu zakończenia pompowania.
 
 ### `checkWaterLevel`
-Zadanie ma na celu regularne sprawdzanie czy poziom cieczy w zbiorniku nie spadł poniżej progu.
+Zadanie ma na celu regularne sprawdzanie, czy poziom cieczy w zbiorniku nie spadł poniżej progu.
 W przypadku przekroczenia progu wysyłana jest wiadomość do użytkownika oraz uruchamiany jest task `watchForMovement`.
 Gdy zbiornik zostanie uzupełniony (tzn. gdy task `checkWaterLevel` wykryje poziom wody wyższy bądź równy od progu) task `watchForMovement` jest zawieszany.
 
 ### `pumpingTask`
-Zadanie jest odpowiadzialne za kontrole pompy. gdy zostanie wznowione uruchamia pompe na określony stałą okres czasu po czym wznawia task `checkIfPlantNeedsWater` i zawiesza własne działanie.
+Zadanie jest odpowiedzialne za kontrole pompy. Gdy zostanie wznowione uruchamia pompę na określony stałą okres czasu, po czym wznawia task `checkIfPlantNeedsWater` i zawiesza własne działanie.
 
 ### `watchForMovement`
 Zadanie sprawdza regularnie (z dość dużą częstotliwością) czy czujnik ruchy nie wykrył  jakieś aktywności.
