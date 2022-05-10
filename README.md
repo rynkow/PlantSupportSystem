@@ -19,6 +19,7 @@ System wspomagający użytkownika w hodowli roślin doniczkowych.
 * monitorowanie wilgotności gleby i automatyczne podlewanie
 * monitorowanie dostępnej ilości wody i powiadamianie użytkownika o potrzebie uzupełnienia zbiornika
    * za pomocą buzzera w przypadku wykrycia ruchu
+* komunikacja przez wifi
 
 ## wykorzystany sprzęt
 ### Mikrokontroler
@@ -52,6 +53,8 @@ Zadanie jest odpowiedzialne za kontrole pompy. Gdy zostanie wznowione uruchamia 
 Zadanie sprawdza regularnie (z dość dużą częstotliwością) czy czujnik ruchy nie wykrył  jakieś aktywności.
 W przypadku wykrycia ruchu zadanie uruchamia buzzer w celu przyciągnięcia uwagi użytkownika i zawiesza działanie na dłuższy okres czasu (aby sygnał był powtarzany z częstotliwością nieirytującą użytkownika).
 
+### `runWifi`
+Zadanie odpowiada za nawiązanie połączania przez WiFi oraz obsługę zapytań przychodzących od klienta. W odpowiedzi zwracany jest aktualny stan czujników.
 
 
 
