@@ -11,7 +11,7 @@ const int BUZZER_PIN = 33;
 
 const char *ssid = "yourAP";
 const char *password = "yourPassword";
-WiFiServer server(80);
+WiFiServer server(8080);
 
 void checkIfPlantNeedsWater( void *pvParameters );
 TaskHandle_t checkIfPlantNeedsWaterHandle;
@@ -28,6 +28,8 @@ void deactivateWaterPump();
 void sendMessageToUser(String msg);
 void buzz();
 bool detectMovement();
+
+String connectionParams[5];
 
 // the setup function runs once when you press reset or power the board
 void setup() {
@@ -49,6 +51,10 @@ void setup() {
   xTaskCreate(watchForMovement, "watch for movement", 1024, NULL, 2, &watchForMovementHandle);
 
   xTaskCreate(runWifi, "runWifi", 20000, NULL, 2, NULL);
+
+  pinMode(2, OUTPUT);
+  digitalWrite(2, 5000);
+
 
 }
 
@@ -170,6 +176,105 @@ void runWifi( void *pvParameters ) {
 
     if (client) {
       String currentLine = "";
+      int start_ = 0;
+      int stop_ = 0;
+      int counter = 0;
+      while (client.connected()) {
+        if (client.available()) {
+          char c = client.read();
+          Serial.write(c);
+          if (c == '\n') {
+            if (currentLine.length() == 0) {
+              client.println("HTTP/1.1 200 OK");
+              client.println("Content-type:text/html");
+              client.println();
+
+              client.print("<h1>Network configuration</h1><form method=\"GET\"><label>SSID: <label><input type=\"text\" name=\"ssid\" /><br /><label>Password: <label><input type=\"text\" name=\"password\" /><br /><label>IP: <label><input type=\"text\" name=\"ip\" /><br /><label>Netmask: <label><input type=\"text\" name=\"netmask\" /><br /><label>Gateway: <label><input type=\"text\" name=\"gateway\" /><br /><button type=\"submit\">Save</button>");
+
+              client.println();
+              break;
+            } else {
+              currentLine = "";
+            }
+          } else if (c != '\r') {
+            currentLine += c;
+          }
+
+          if(currentLine.endsWith("=")){
+            start_ = currentLine.length();
+          }
+          if(currentLine.endsWith("&")){
+            stop_ = currentLine.length()-1;
+          }
+          if(currentLine.endsWith(" HTTP/1.1")){
+            stop_ = currentLine.length() - 9;
+          }
+          
+          if (counter < 5 && (currentLine.endsWith("&") || currentLine.endsWith(" HTTP/1.1") ) ){
+            connectionParams[counter] = currentLine.substring(start_, stop_);
+            counter++;
+          }
+          
+        }
+      }
+      client.stop();
+      Serial.println("Client Disconnected.");
+      for(int i = 0; i < 5; i++){
+        Serial.println(connectionParams[i]);
+      }
+
+      Serial.println(counter);
+
+      if(counter == 5){
+        Serial.write("Run as client\n");
+        xTaskCreate(runWifi2, "runWifi", 40000, NULL, 2, NULL);
+        vTaskDelete(NULL);
+      }
+    }
+  }
+}
+
+void runWifi2( void *pvParameters ) {
+  
+  delay(2000);
+    
+
+  const char* ssid     = connectionParams[0].c_str();;
+  const char* password = connectionParams[1].c_str();;
+
+  IPAddress ip;
+  IPAddress netmask;
+  IPAddress gateway;
+
+  ip.fromString(connectionParams[2]);
+  netmask.fromString(connectionParams[3]);
+  gateway.fromString(connectionParams[4]);
+  
+  
+  WiFiServer server2(80);
+  
+  delay(10);
+  WiFi.config(ip, gateway, netmask);
+  
+  WiFi.begin(ssid, password);
+  
+  while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(".");
+  }
+  
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+  
+  server2.begin();
+
+  for(;;){
+    WiFiClient client = server2.available();
+
+    if (client) {
+      String currentLine = "";
       while (client.connected()) {
         if (client.available()) {
           char c = client.read();
@@ -178,10 +283,6 @@ void runWifi( void *pvParameters ) {
               client.println("HTTP/1.1 200 OK");
               client.println("Content-type:text/html");
               client.println();
-
-              client.print("Click <a href=\"/H\">here</a> to ...<br>");
-              //            client.print("Click <a href=\"/L\">here</a> to ...<br>");
-
 
               client.print("Movement sensor ");
               client.print(digitalRead(MOVEMENT_SENSOR_PIN));
@@ -219,4 +320,5 @@ void runWifi( void *pvParameters ) {
       Serial.println("Client Disconnected.");
     }
   }
+
 }
