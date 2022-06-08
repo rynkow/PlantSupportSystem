@@ -9,6 +9,12 @@ const int MOISTURE_SENSOR_PIN = 26;
 const int PUMP_CONTROL_PIN = 13;
 const int BUZZER_PIN = 33;
 
+
+int WATER_LEVEL_THRESHOLD;
+int MOISTURE_THRESHOLD;
+int LIGHT_THRESHOLD;
+
+
 const char *ssid = "yourAP";
 const char *password = "yourPassword";
 WiFiServer server(8080);
@@ -43,7 +49,10 @@ void setup() {
   pinMode(FLUID_LEVEL_SENSOR_PIN, INPUT); //analog fluid level sensor
   pinMode(MOISTURE_SENSOR_PIN, INPUT); //analog moisture sensor
   pinMode(PUMP_CONTROL_PIN, OUTPUT);
-
+  
+  ledcSetup(0,1E5,12);
+  ledcAttachPin(BUZZER_PIN,0);
+  
   // Now set up tasks to run independently.
   xTaskCreate(checkIfPlantNeedsWater, "check if plant shoud be watered", 1024, NULL, 2, &checkIfPlantNeedsWaterHandle);
   xTaskCreate(checkWaterLevel, "check water level in tank", 1024, NULL, 2, NULL);
@@ -51,10 +60,7 @@ void setup() {
   xTaskCreate(watchForMovement, "watch for movement", 1024, NULL, 2, &watchForMovementHandle);
 
   xTaskCreate(runWifi, "runWifi", 20000, NULL, 2, NULL);
-
-  pinMode(2, OUTPUT);
-  digitalWrite(2, 5000);
-
+  
 
 }
 
@@ -92,6 +98,13 @@ bool detectMovement() {
 
 void buzz() {
   Serial.println("BUZZZZZZZZZZ BUZZZZZZ BUUUUUUZZZ!1!");
+
+  ledcWriteTone(0,800);
+  delay(1000);
+  uint8_t octave = 1;
+  ledcWriteNote(0,NOTE_C,octave);  
+  delay(1000);
+  
 }
 
 void checkIfPlantNeedsWater(void *pvParameters) {
@@ -275,6 +288,8 @@ void runWifi2( void *pvParameters ) {
 
     if (client) {
       String currentLine = "";
+      int start_ = 0;
+      int stop_ = 0;
       while (client.connected()) {
         if (client.available()) {
           char c = client.read();
@@ -298,6 +313,10 @@ void runWifi2( void *pvParameters ) {
               client.print(digitalRead(PUMP_CONTROL_PIN));
               client.print("<br>Buzzer ");
               client.print(digitalRead(BUZZER_PIN));
+              client.print("<form method=\"GET\"><label>Water level threshold (percents): </label><input type=\"text\" name=\"wt\"><button type=\"submit\">SET</button></form><br>");
+              client.print("<form method=\"GET\"><label>Moisture threshold (percents): </label><input type=\"text\" name=\"mo\"><button type=\"submit\">SET</button></form><br>");
+              client.print("<form method=\"GET\"><label>Light threshold (percents): </label><input type=\"text\" name=\"li\"><button type=\"submit\">SET</button></form><br>");
+
 
               client.println();
               break;
@@ -308,11 +327,27 @@ void runWifi2( void *pvParameters ) {
             currentLine += c;
           }
 
-          if (currentLine.endsWith("GET /H")) {
-            Serial.write("first action\n");
+          if(currentLine.endsWith("=")){
+            start_ = currentLine.length();
           }
-          if (currentLine.endsWith("GET /L")) {
-            Serial.write("second action\n");
+          if(currentLine.endsWith(" HTTP/1.1")){
+            stop_ = currentLine.length() - 9;
+            Serial.println(currentLine.substring(start_-3, start_-1));
+            if(currentLine.substring(start_-3, start_-1) == "wt"){
+              WATER_LEVEL_THRESHOLD = currentLine.substring(start_, stop_).toInt();
+            }
+            if(currentLine.substring(start_-3, start_-1) == "mo"){
+              MOISTURE_THRESHOLD = currentLine.substring(start_, stop_).toInt();
+            }
+            if(currentLine.substring(start_-3, start_-1) == "li"){
+              LIGHT_THRESHOLD = currentLine.substring(start_, stop_).toInt();
+            }
+
+            Serial.println(WATER_LEVEL_THRESHOLD);
+            Serial.println(MOISTURE_THRESHOLD);
+            Serial.println(LIGHT_THRESHOLD);
+
+
           }
         }
       }
