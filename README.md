@@ -38,7 +38,7 @@ System wspomagający użytkownika w hodowli roślin doniczkowych.
  * buzzer
 
 ## Schemat
-TU SCHEMAT
+![schemat_podlewanie](https://user-images.githubusercontent.com/79860179/173699567-28816955-25ae-4351-94a5-049d5426df4d.png)
 
 ## Działanie
 Wykorzystaliśmy system FreeRTOS i stworzyliśmy szereg zadań, które operują poszczególnymi elementami systemu.
