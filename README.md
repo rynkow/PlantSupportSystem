@@ -32,6 +32,8 @@ System wspomagający użytkownika w hodowli roślin doniczkowych.
 ### Czujniki
 * czujnik wilgotności gleby
 * czujnik poziomu cieczy
+* czujnik natężenia światła
+* czujnik ruchu
 
 ### Inne moduły
  * pompa cieczy
